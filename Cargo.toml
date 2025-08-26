@@ -1,0 +1,10 @@
+[package]
+name = "avalanche_effect"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+colored = "3.0.0"
+rayon = "1.11.0"
+sha2 = "0.10.9"
+text_io = "0.1.13"
