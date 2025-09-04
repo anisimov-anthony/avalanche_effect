@@ -1,4 +1,3 @@
-#[allow(dead_code)]
 pub fn str_to_bits(input: &str) -> Vec<u8> {
     let mut result = Vec::with_capacity(input.len() * 8);
     for byte in input.as_bytes().iter() {
@@ -9,8 +8,7 @@ pub fn str_to_bits(input: &str) -> Vec<u8> {
     result
 }
 
-#[allow(dead_code)]
-pub fn bits_to_bytes(bits: &[u8]) -> Vec<u8> {
+pub fn bits_to_bytes(bits: &Vec<u8>) -> Vec<u8> {
     bits.chunks(8)
         .map(|chunk| {
             chunk
@@ -21,24 +19,13 @@ pub fn bits_to_bytes(bits: &[u8]) -> Vec<u8> {
         .collect()
 }
 
-#[allow(dead_code)]
-pub fn reverse_bit(input: &[u8], bit_idx: usize) -> Vec<u8> {
+pub fn reverse_bit(input: &Vec<u8>, bit_idx: usize) -> Vec<u8> {
     if bit_idx >= input.len() {
         return input.to_vec();
     }
     let mut res = input.to_vec();
     res[input.len() - bit_idx - 1] = 1 - res[input.len() - bit_idx - 1];
     res
-}
-
-#[allow(dead_code)]
-fn is_binary(vec: &Vec<u8>) -> bool {
-    let incorrect_bit = vec.iter().find(|&&bit| (bit != 1) && (bit != 0));
-
-    if let Some(_) = incorrect_bit {
-        return false;
-    }
-    true
 }
 
 #[cfg(test)]
@@ -93,17 +80,97 @@ mod tests {
     }
 
     #[test]
-    fn is_binary_empty() {
+    fn bits_to_bytes_empty() {
         let input = vec![];
-        assert!(is_binary(&input));
+        let valid_output = vec![];
+        assert_eq!(bits_to_bytes(&input), valid_output);
     }
 
     #[test]
-    fn is_binary_basic() {
-        let input = vec![0, 1, 1, 0, 1, 1];
-        assert!(is_binary(&input));
+    fn bits_to_bytes_basic() {
+        let input = vec![0, 0, 0, 0, 0, 0, 0, 0];
+        let valid_output = vec![0];
+        assert_eq!(bits_to_bytes(&input), valid_output);
 
-        let input = vec![0, 1, 1, 2, 1, 1];
-        assert!(!is_binary(&input));
+        let input = vec![1, 1, 1, 1, 1, 1, 1, 1];
+        let valid_output = vec![255];
+        assert_eq!(bits_to_bytes(&input), valid_output);
+
+        let mut input = vec![];
+        input.extend(vec![1, 0, 0, 0, 0, 0, 0, 0]);
+        input.extend(vec![0, 1, 0, 0, 0, 0, 0, 0]);
+        input.extend(vec![0, 0, 1, 0, 0, 0, 0, 0]);
+        input.extend(vec![0, 0, 0, 1, 0, 0, 0, 0]);
+        input.extend(vec![0, 0, 0, 0, 1, 0, 0, 0]);
+        input.extend(vec![0, 0, 0, 0, 0, 1, 0, 0]);
+        input.extend(vec![0, 0, 0, 0, 0, 0, 1, 0]);
+        input.extend(vec![0, 0, 0, 0, 0, 0, 0, 1]);
+
+        let valid_output = vec![128, 64, 32, 16, 8, 4, 2, 1];
+        assert_eq!(bits_to_bytes(&input), valid_output);
+    }
+
+    #[test]
+    fn bits_to_bytes_without_traling_bits() {
+        let input = vec![0];
+        let valid_output = vec![0];
+        assert_eq!(bits_to_bytes(&input), valid_output);
+
+        let input = vec![0, 0];
+        assert_eq!(bits_to_bytes(&input), valid_output);
+
+        let input = vec![1];
+        let valid_output = vec![128];
+        assert_eq!(bits_to_bytes(&input), valid_output);
+
+        let input = vec![0, 1];
+        let valid_output = vec![64];
+        assert_eq!(bits_to_bytes(&input), valid_output);
+
+        let input = vec![1, 0, 1];
+        let valid_output = vec![160];
+        assert_eq!(bits_to_bytes(&input), valid_output);
+
+        let mut input = vec![1, 1, 1, 1, 1, 1, 1, 1];
+        input.extend(vec![0, 1]);
+        let valid_output = vec![255, 64];
+        assert_eq!(bits_to_bytes(&input), valid_output);
+
+        let mut input = vec![1, 1, 1, 1, 1, 1, 1, 1];
+        input.extend(vec![0, 0, 0, 0, 0, 0, 0, 0]);
+        input.extend(vec![1]);
+        let valid_output = vec![255, 0, 128];
+        assert_eq!(bits_to_bytes(&input), valid_output);
+    }
+
+    #[test]
+    fn test_reverse_bit_empty() {
+        let input_vec = vec![];
+        let idx = 0;
+        let valid_output = vec![];
+        assert_eq!(reverse_bit(&input_vec, idx), valid_output);
+
+        let idx = 1;
+        assert_eq!(reverse_bit(&input_vec, idx), valid_output);
+    }
+
+    #[test]
+    fn test_reverse_bit_basic() {
+        let input_vec = vec![1, 1, 1, 1, 1, 1, 1, 1];
+        let idx = 0;
+        let valid_output = vec![1, 1, 1, 1, 1, 1, 1, 0];
+        assert_eq!(reverse_bit(&input_vec, idx), valid_output);
+
+        let input_vec = vec![0, 0, 0, 0, 0, 0, 0, 0];
+        let idx = 2;
+        let valid_output = vec![0, 0, 0, 0, 0, 1, 0, 0];
+        assert_eq!(reverse_bit(&input_vec, idx), valid_output);
+
+        let mut input_vec = vec![0, 0, 0, 0, 0, 0, 0, 0];
+        input_vec.extend(vec![0, 1, 0]);
+        let idx = 6;
+        let mut valid_output = vec![0, 0, 0, 0, 1, 0, 0, 0];
+        valid_output.extend(vec![0, 1, 0]);
+        assert_eq!(reverse_bit(&input_vec, idx), valid_output);
     }
 }

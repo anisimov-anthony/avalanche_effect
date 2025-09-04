@@ -14,7 +14,7 @@ impl App {
     pub(in crate::app) fn process_manual_input(&mut self) {
         let original_bits = manipulations::str_to_bits(&self.original_text);
 
-        let (modified_bits, bit_changed) = if let Some(idx) = self.bit_index {
+        let (modified_bits, _) = if let Some(idx) = self.bit_index {
             if idx < original_bits.len() {
                 (manipulations::reverse_bit(&original_bits, idx), Some(idx))
             } else {
