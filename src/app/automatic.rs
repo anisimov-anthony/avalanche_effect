@@ -23,6 +23,7 @@ impl App {
 
         let statistics = Arc::new(Mutex::new(Vec::new()));
 
+        let time = std::time::Instant::now();
         (0..original_bits.len()).into_par_iter().for_each(|idx| {
             let changed_bits = manipulations::reverse_bit(&original_bits, idx);
 
@@ -37,6 +38,7 @@ impl App {
             let mut stats_lock = statistics.lock().unwrap();
             stats_lock.push(percent);
         });
+        let elapsed = time.elapsed();
 
         let stats = statistics.lock().unwrap();
         let max_val = stats.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
@@ -47,6 +49,8 @@ impl App {
         self.messages.push(format!("Minimum: {:.2}%", min_val));
         self.messages.push(format!("Maximum: {:.2}%", max_val));
         self.messages.push(format!("Average: {:.2}%", avg));
+        self.messages
+            .push(format!("Computation time: {:?}", elapsed));
         self.messages.push("Press Enter to continue...".to_string());
     }
 }

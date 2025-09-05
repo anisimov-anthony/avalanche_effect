@@ -65,7 +65,6 @@ impl App {
         if let Some(state) = &self.input_state {
             match state {
                 InputState::EnteringText | InputState::EnteringBitIndex => {
-                    // Вставляем символ в позицию курсора
                     self.input_buffer.insert(self.input_cursor_position, c);
                     self.input_cursor_position += 1;
                     self.adjust_input_scroll();
@@ -205,7 +204,24 @@ impl App {
                                 self.input_cursor_position = 0;
                                 self.input_scroll_offset = 0;
                                 self.input_state = Some(InputState::EnteringBitIndex);
-                                self.messages.push(format!("Text: {}", self.original_text));
+                                let first_10: String =
+                                    self.original_text.chars().clone().take(10).collect();
+                                let last_10: String = self
+                                    .original_text
+                                    .chars()
+                                    .clone()
+                                    .rev()
+                                    .take(10)
+                                    .collect::<Vec<_>>()
+                                    .into_iter()
+                                    .rev()
+                                    .collect();
+
+                                self.messages.push(format!(
+                                    "Text in format first..last: {}...{}",
+                                    first_10, last_10
+                                )); // TODO remove harcode, do better format 
+
                                 self.messages.push(
                                     "Enter bit index to flip (or press Enter for no flip):"
                                         .to_string(),
@@ -243,7 +259,24 @@ impl App {
                                 self.input_buffer.clear();
                                 self.input_cursor_position = 0;
                                 self.input_scroll_offset = 0;
-                                self.messages.push(format!("Text: {}", self.original_text));
+                                let first_10: String =
+                                    self.original_text.chars().clone().take(10).collect();
+                                let last_10: String = self
+                                    .original_text
+                                    .chars()
+                                    .clone()
+                                    .rev()
+                                    .take(10)
+                                    .collect::<Vec<_>>()
+                                    .into_iter()
+                                    .rev()
+                                    .collect();
+
+                                self.messages.push(format!(
+                                    "Text in format first..last: {}...{}",
+                                    first_10, last_10
+                                )); // TODO remove harcode, do better format 
+
                                 self.process_automatic();
                                 self.input_state = Some(InputState::ShowingResult);
                                 self.scroll_to_bottom();

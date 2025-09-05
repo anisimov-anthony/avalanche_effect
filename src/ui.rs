@@ -4,7 +4,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style, Stylize},
     text::{Line, Span, Text},
-    widgets::{Block, Borders, Clear, List, ListItem, ListState, Paragraph, Wrap},
+    widgets::{Block, Borders, Clear, Paragraph, Wrap},
 };
 
 static LOGO_COLOR: Color = Color::Rgb(180, 220, 255);
@@ -113,59 +113,34 @@ fn render_sandbox(frame: &mut Frame, app: &App) {
 }
 
 fn render_output_area(frame: &mut Frame, app: &App, area: Rect) {
-    let mut list_items = Vec::new();
+    let mut lines: Vec<Line> = Vec::new();
     let mut colored_idx = 0;
 
     for msg in app.messages.iter() {
         if msg == " " && colored_idx < app.colored_messages.len() {
-            let colored_line = &app.colored_messages[colored_idx];
-            let spans: Vec<Span> = colored_line
+            let spans: Vec<Span> = app.colored_messages[colored_idx]
                 .iter()
                 .map(|ct| Span::styled(ct.text.clone(), Style::default().fg(ct.color)))
                 .collect();
-            list_items.push(ListItem::new(Line::from(spans)));
+
+            lines.push(Line::from(spans));
             colored_idx += 1;
         } else {
-            list_items.push(ListItem::new(msg.clone()));
+            lines.push(Line::from(msg.clone()));
         }
     }
 
-    let list = List::new(list_items)
+    let paragraph = Paragraph::new(lines)
         .block(
             Block::default()
                 .borders(Borders::ALL)
                 .title("Analysis Results")
                 .fg(LOGO_COLOR),
         )
-        .highlight_style(Style::default().bg(Color::DarkGray));
+        .alignment(Alignment::Left)
+        .wrap(Wrap { trim: true });
 
-    let mut list_state = ListState::default();
-    if !app.messages.is_empty() {
-        let selected_index = app
-            .output_scroll_offset
-            .min(app.messages.len().saturating_sub(1));
-        list_state.select(Some(selected_index));
-    }
-
-    frame.render_stateful_widget(list, area, &mut list_state);
-
-    if app.messages.len() > (area.height as usize).saturating_sub(2) {
-        let scroll_info = format!(
-            "{}/{}",
-            app.output_scroll_offset + 1,
-            app.messages.len().max(1)
-        );
-        let scroll_paragraph =
-            Paragraph::new(scroll_info).style(Style::default().fg(Color::DarkGray));
-
-        let scroll_area = Rect {
-            x: area.x + area.width.saturating_sub(10),
-            y: area.y,
-            width: 10,
-            height: 1,
-        };
-        frame.render_widget(scroll_paragraph, scroll_area);
-    }
+    frame.render_widget(paragraph, area);
 }
 
 fn render_input_area(frame: &mut Frame, app: &App, area: Rect) {
