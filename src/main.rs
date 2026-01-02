@@ -56,15 +56,17 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                 continue;
             }
 
-            if key.code == KeyCode::Esc { match app.current_screen {
-                CurrentScreen::Sandbox => {
-                    app.switch_to_menu();
+            if key.code == KeyCode::Esc {
+                match app.current_screen {
+                    CurrentScreen::Sandbox => {
+                        app.switch_to_menu();
+                    }
+                    CurrentScreen::Exiting => {
+                        app.current_screen = CurrentScreen::Menu;
+                    }
+                    _ => {}
                 }
-                CurrentScreen::Exiting => {
-                    app.current_screen = CurrentScreen::Menu;
-                }
-                _ => {}
-            } }
+            }
 
             match app.current_screen {
                 CurrentScreen::Menu => match key.code {

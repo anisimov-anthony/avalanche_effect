@@ -1,6 +1,6 @@
 # Avalanche Effect
 
-![CI Tests](https://github.com/anisimov-anthony/avalanche_effect/workflows/CI/badge.svg)
+![CI](https://github.com/anisimov-anthony/avalanche_effect/actions/workflows/rust.yml/badge.svg)
 [![codecov](https://img.shields.io/badge/coverage-92.94%25-brightgreen.svg)](https://github.com/anisimov-anthony/avalanche_effect)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
@@ -47,23 +47,12 @@ cargo test test_name
 
 ### Code Coverage
 
-The project maintains **92.94% code coverage** across all modules:
-
-| Module | Regions | Functions | Lines | Status |
-|--------|---------|-----------|-------|--------|
-| **app/manipulations.rs** | 100.00% | 100.00% | 100.00% | ✅ Perfect |
-| **app/automatic.rs** | 98.36% | 100.00% | 100.00% | ✅ Excellent |
-| **app/manual.rs** | 98.81% | 100.00% | 100.00% | ✅ Excellent |
-| **app/mod.rs** | 97.66% | 100.00% | 98.77% | ✅ Excellent |
-| **ui.rs** | 94.06% | 100.00% | 95.10% | ✅ Excellent |
-| **app/statistics.rs** | 94.74% | 100.00% | 100.00% | ✅ Excellent |
-
-**Total: 89 tests** covering:
+The project maintains **92.94% code coverage** with **89 tests**:
 - 72 unit tests for core app logic
 - 14 integration tests for end-to-end workflows
 - 13 UI rendering tests
 
-### Generate Coverage Report
+**Generate Coverage Report:**
 ```bash
 # Install coverage tool (one-time setup)
 cargo install cargo-llvm-cov

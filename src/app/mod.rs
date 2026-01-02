@@ -195,105 +195,105 @@ impl App {
 
     pub fn submit_input(&mut self) {
         if let Some(state) = &self.input_state
-            && let Some(sandbox_mode) = &self.current_mode {
-                match sandbox_mode {
-                    SandboxMode::Manual => match state {
-                        InputState::EnteringText => {
-                            if !self.input_buffer.is_empty() {
-                                self.original_text = self.input_buffer.clone();
-                                self.input_buffer.clear();
-                                self.input_cursor_position = 0;
-                                self.input_scroll_offset = 0;
-                                self.input_state = Some(InputState::EnteringBitIndex);
-                                let first_10: String =
-                                    self.original_text.chars().clone().take(10).collect();
-                                let last_10: String = self
-                                    .original_text
-                                    .chars()
-                                    .clone()
-                                    .rev()
-                                    .take(10)
-                                    .collect::<Vec<_>>()
-                                    .into_iter()
-                                    .rev()
-                                    .collect();
-
-                                self.messages.push(format!(
-                                    "Text in format first..last: {}...{}",
-                                    first_10, last_10
-                                )); // TODO remove harcode, do better format 
-
-                                self.messages.push(
-                                    "Enter bit index to flip (or press Enter for no flip):"
-                                        .to_string(),
-                                );
-                                self.scroll_to_bottom();
-                            }
-                        }
-                        InputState::EnteringBitIndex => {
-                            let bit_idx = if self.input_buffer.is_empty() {
-                                None
-                            } else {
-                                self.input_buffer.parse().ok()
-                            };
-
-                            self.bit_index = bit_idx;
+            && let Some(sandbox_mode) = &self.current_mode
+        {
+            match sandbox_mode {
+                SandboxMode::Manual => match state {
+                    InputState::EnteringText => {
+                        if !self.input_buffer.is_empty() {
+                            self.original_text = self.input_buffer.clone();
                             self.input_buffer.clear();
                             self.input_cursor_position = 0;
                             self.input_scroll_offset = 0;
-                            self.input_state = Some(InputState::ShowingResult);
-                            self.process_manual_input();
+                            self.input_state = Some(InputState::EnteringBitIndex);
+                            let first_10: String =
+                                self.original_text.chars().clone().take(10).collect();
+                            let last_10: String = self
+                                .original_text
+                                .chars()
+                                .clone()
+                                .rev()
+                                .take(10)
+                                .collect::<Vec<_>>()
+                                .into_iter()
+                                .rev()
+                                .collect();
+
+                            self.messages.push(format!(
+                                "Text in format first..last: {}...{}",
+                                first_10, last_10
+                            )); // TODO remove harcode, do better format 
+
+                            self.messages.push(
+                                "Enter bit index to flip (or press Enter for no flip):".to_string(),
+                            );
                             self.scroll_to_bottom();
                         }
-                        InputState::ShowingResult => {
-                            self.input_state = Some(InputState::EnteringText);
-                            self.messages.clear();
-                            self.colored_messages.clear();
-                            self.output_scroll_offset = 0;
-                            self.messages.push("Enter string to hash:".to_string());
-                        }
-                    },
-                    SandboxMode::Automatic => match state {
-                        InputState::EnteringText => {
-                            if !self.input_buffer.is_empty() {
-                                self.original_text = self.input_buffer.clone();
-                                self.input_buffer.clear();
-                                self.input_cursor_position = 0;
-                                self.input_scroll_offset = 0;
-                                let first_10: String =
-                                    self.original_text.chars().clone().take(10).collect();
-                                let last_10: String = self
-                                    .original_text
-                                    .chars()
-                                    .clone()
-                                    .rev()
-                                    .take(10)
-                                    .collect::<Vec<_>>()
-                                    .into_iter()
-                                    .rev()
-                                    .collect();
+                    }
+                    InputState::EnteringBitIndex => {
+                        let bit_idx = if self.input_buffer.is_empty() {
+                            None
+                        } else {
+                            self.input_buffer.parse().ok()
+                        };
 
-                                self.messages.push(format!(
-                                    "Text in format first..last: {}...{}",
-                                    first_10, last_10
-                                )); // TODO remove harcode, do better format 
+                        self.bit_index = bit_idx;
+                        self.input_buffer.clear();
+                        self.input_cursor_position = 0;
+                        self.input_scroll_offset = 0;
+                        self.input_state = Some(InputState::ShowingResult);
+                        self.process_manual_input();
+                        self.scroll_to_bottom();
+                    }
+                    InputState::ShowingResult => {
+                        self.input_state = Some(InputState::EnteringText);
+                        self.messages.clear();
+                        self.colored_messages.clear();
+                        self.output_scroll_offset = 0;
+                        self.messages.push("Enter string to hash:".to_string());
+                    }
+                },
+                SandboxMode::Automatic => match state {
+                    InputState::EnteringText => {
+                        if !self.input_buffer.is_empty() {
+                            self.original_text = self.input_buffer.clone();
+                            self.input_buffer.clear();
+                            self.input_cursor_position = 0;
+                            self.input_scroll_offset = 0;
+                            let first_10: String =
+                                self.original_text.chars().clone().take(10).collect();
+                            let last_10: String = self
+                                .original_text
+                                .chars()
+                                .clone()
+                                .rev()
+                                .take(10)
+                                .collect::<Vec<_>>()
+                                .into_iter()
+                                .rev()
+                                .collect();
 
-                                self.process_automatic();
-                                self.input_state = Some(InputState::ShowingResult);
-                                self.scroll_to_bottom();
-                            }
+                            self.messages.push(format!(
+                                "Text in format first..last: {}...{}",
+                                first_10, last_10
+                            )); // TODO remove harcode, do better format 
+
+                            self.process_automatic();
+                            self.input_state = Some(InputState::ShowingResult);
+                            self.scroll_to_bottom();
                         }
-                        InputState::ShowingResult => {
-                            self.input_state = Some(InputState::EnteringText);
-                            self.messages.clear();
-                            self.colored_messages.clear();
-                            self.output_scroll_offset = 0;
-                            self.messages.push("Enter string to hash:".to_string());
-                        }
-                        _ => panic!("todo"),
-                    },
-                }
+                    }
+                    InputState::ShowingResult => {
+                        self.input_state = Some(InputState::EnteringText);
+                        self.messages.clear();
+                        self.colored_messages.clear();
+                        self.output_scroll_offset = 0;
+                        self.messages.push("Enter string to hash:".to_string());
+                    }
+                    _ => panic!("todo"),
+                },
             }
+        }
     }
 
     fn scroll_to_bottom(&mut self) {
