@@ -335,3 +335,187 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
         ])
         .split(popup_layout[1])[1]
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ratatui::Terminal;
+    use ratatui::backend::TestBackend;
+
+    #[test]
+    fn test_centered_rect_basic() {
+        let area = Rect::new(0, 0, 100, 100);
+        let centered = centered_rect(50, 50, area);
+
+        assert!(centered.x >= 20 && centered.x <= 30);
+        assert!(centered.y >= 20 && centered.y <= 30);
+        assert!(centered.width >= 45 && centered.width <= 55);
+        assert!(centered.height >= 45 && centered.height <= 55);
+    }
+
+    #[test]
+    fn test_centered_rect_full_size() {
+        let area = Rect::new(0, 0, 100, 100);
+        let centered = centered_rect(100, 100, area);
+
+        assert_eq!(centered.width, 100);
+        assert_eq!(centered.height, 100);
+    }
+
+    #[test]
+    fn test_centered_rect_small() {
+        let area = Rect::new(0, 0, 100, 100);
+        let centered = centered_rect(10, 10, area);
+
+        assert!(centered.width <= 12);
+        assert!(centered.height <= 12);
+    }
+
+    #[test]
+    fn test_ui_menu_screen() {
+        let backend = TestBackend::new(80, 24);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let app = App::new();
+
+        terminal
+            .draw(|frame| {
+                ui(frame, &app);
+            })
+            .unwrap();
+    }
+
+    #[test]
+    fn test_ui_sandbox_manual_mode() {
+        let backend = TestBackend::new(80, 24);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let mut app = App::new();
+        app.switch_to_manual();
+
+        terminal
+            .draw(|frame| {
+                ui(frame, &app);
+            })
+            .unwrap();
+    }
+
+    #[test]
+    fn test_ui_sandbox_automatic_mode() {
+        let backend = TestBackend::new(80, 24);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let mut app = App::new();
+        app.original_text = "test".to_string();
+        app.current_screen = CurrentScreen::Sandbox;
+        app.current_mode = Some(SandboxMode::Automatic);
+        app.input_state = Some(InputState::ShowingResult);
+
+        terminal
+            .draw(|frame| {
+                ui(frame, &app);
+            })
+            .unwrap();
+    }
+
+    #[test]
+    fn test_ui_exit_modal() {
+        let backend = TestBackend::new(80, 24);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let mut app = App::new();
+        app.current_screen = CurrentScreen::Exiting;
+
+        terminal
+            .draw(|frame| {
+                ui(frame, &app);
+            })
+            .unwrap();
+    }
+
+    #[test]
+    fn test_render_menu_direct() {
+        let backend = TestBackend::new(80, 24);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let app = App::new();
+
+        terminal
+            .draw(|frame| {
+                render_menu(frame, &app);
+            })
+            .unwrap();
+    }
+
+    #[test]
+    fn test_render_sandbox_direct() {
+        let backend = TestBackend::new(80, 24);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let mut app = App::new();
+        app.switch_to_manual();
+
+        terminal
+            .draw(|frame| {
+                render_sandbox(frame, &app);
+            })
+            .unwrap();
+    }
+
+    #[test]
+    fn test_render_exit_modal_direct() {
+        let backend = TestBackend::new(80, 24);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        terminal
+            .draw(|frame| {
+                render_exit_modal(frame);
+            })
+            .unwrap();
+    }
+
+    #[test]
+    fn test_render_with_colored_messages() {
+        let backend = TestBackend::new(80, 24);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let mut app = App::new();
+        app.switch_to_manual();
+        app.original_text = "test".to_string();
+        app.bit_index = Some(0);
+        app.process_manual_input();
+
+        terminal
+            .draw(|frame| {
+                ui(frame, &app);
+            })
+            .unwrap();
+    }
+
+    #[test]
+    fn test_render_with_long_input() {
+        let backend = TestBackend::new(80, 24);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let mut app = App::new();
+        app.switch_to_manual();
+        app.input_buffer = "a".repeat(200);
+        app.input_cursor_position = 100;
+
+        terminal
+            .draw(|frame| {
+                ui(frame, &app);
+            })
+            .unwrap();
+    }
+
+    #[test]
+    fn test_render_with_scrolled_output() {
+        let backend = TestBackend::new(80, 24);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let mut app = App::new();
+        app.switch_to_manual();
+        for i in 0..50 {
+            app.messages.push(format!("Message {}", i));
+        }
+        app.output_scroll_offset = 10;
+
+        terminal
+            .draw(|frame| {
+                ui(frame, &app);
+            })
+            .unwrap();
+    }
+}

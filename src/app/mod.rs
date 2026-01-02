@@ -44,6 +44,12 @@ pub struct App {
     pub output_scroll_offset: usize,
 }
 
+impl Default for App {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl App {
     pub fn new() -> App {
         App {
@@ -62,15 +68,10 @@ impl App {
     }
 
     pub fn handle_input(&mut self, c: char) {
-        if let Some(state) = &self.input_state {
-            match state {
-                InputState::EnteringText | InputState::EnteringBitIndex => {
-                    self.input_buffer.insert(self.input_cursor_position, c);
-                    self.input_cursor_position += 1;
-                    self.adjust_input_scroll();
-                }
-                _ => {}
-            }
+        if let Some(InputState::EnteringText | InputState::EnteringBitIndex) = &self.input_state {
+            self.input_buffer.insert(self.input_cursor_position, c);
+            self.input_cursor_position += 1;
+            self.adjust_input_scroll();
         }
     }
 
@@ -193,8 +194,8 @@ impl App {
     }
 
     pub fn submit_input(&mut self) {
-        if let Some(state) = &self.input_state {
-            if let Some(sandbox_mode) = &self.current_mode {
+        if let Some(state) = &self.input_state
+            && let Some(sandbox_mode) = &self.current_mode {
                 match sandbox_mode {
                     SandboxMode::Manual => match state {
                         InputState::EnteringText => {
@@ -293,7 +294,6 @@ impl App {
                     },
                 }
             }
-        }
     }
 
     fn scroll_to_bottom(&mut self) {
@@ -327,5 +327,466 @@ impl App {
         self.input_buffer.clear();
         self.messages.clear();
         self.colored_messages.clear();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_app_new() {
+        let app = App::new();
+        assert!(matches!(app.current_screen, CurrentScreen::Menu));
+        assert!(app.current_mode.is_none());
+        assert!(app.input_state.is_none());
+        assert_eq!(app.input_buffer, "");
+        assert_eq!(app.input_cursor_position, 0);
+        assert_eq!(app.input_scroll_offset, 0);
+        assert_eq!(app.output_scroll_offset, 0);
+    }
+
+    #[test]
+    fn test_handle_input_entering_text() {
+        let mut app = App::new();
+        app.input_state = Some(InputState::EnteringText);
+
+        app.handle_input('a');
+        assert_eq!(app.input_buffer, "a");
+        assert_eq!(app.input_cursor_position, 1);
+
+        app.handle_input('b');
+        assert_eq!(app.input_buffer, "ab");
+        assert_eq!(app.input_cursor_position, 2);
+    }
+
+    #[test]
+    fn test_handle_input_at_cursor_position() {
+        let mut app = App::new();
+        app.input_state = Some(InputState::EnteringText);
+        app.input_buffer = "hello".to_string();
+        app.input_cursor_position = 2;
+
+        app.handle_input('X');
+        assert_eq!(app.input_buffer, "heXllo");
+        assert_eq!(app.input_cursor_position, 3);
+    }
+
+    #[test]
+    fn test_handle_input_no_state() {
+        let mut app = App::new();
+        app.handle_input('a');
+        assert_eq!(app.input_buffer, "");
+    }
+
+    #[test]
+    fn test_handle_backspace_basic() {
+        let mut app = App::new();
+        app.input_state = Some(InputState::EnteringText);
+        app.input_buffer = "hello".to_string();
+        app.input_cursor_position = 5;
+
+        app.handle_backspace();
+        assert_eq!(app.input_buffer, "hell");
+        assert_eq!(app.input_cursor_position, 4);
+    }
+
+    #[test]
+    fn test_handle_backspace_middle() {
+        let mut app = App::new();
+        app.input_state = Some(InputState::EnteringText);
+        app.input_buffer = "hello".to_string();
+        app.input_cursor_position = 3;
+
+        app.handle_backspace();
+        assert_eq!(app.input_buffer, "helo");
+        assert_eq!(app.input_cursor_position, 2);
+    }
+
+    #[test]
+    fn test_handle_backspace_at_start() {
+        let mut app = App::new();
+        app.input_state = Some(InputState::EnteringText);
+        app.input_buffer = "hello".to_string();
+        app.input_cursor_position = 0;
+
+        app.handle_backspace();
+        assert_eq!(app.input_buffer, "hello");
+        assert_eq!(app.input_cursor_position, 0);
+    }
+
+    #[test]
+    fn test_handle_delete_basic() {
+        let mut app = App::new();
+        app.input_state = Some(InputState::EnteringText);
+        app.input_buffer = "hello".to_string();
+        app.input_cursor_position = 0;
+
+        app.handle_delete();
+        assert_eq!(app.input_buffer, "ello");
+        assert_eq!(app.input_cursor_position, 0);
+    }
+
+    #[test]
+    fn test_handle_delete_middle() {
+        let mut app = App::new();
+        app.input_state = Some(InputState::EnteringText);
+        app.input_buffer = "hello".to_string();
+        app.input_cursor_position = 2;
+
+        app.handle_delete();
+        assert_eq!(app.input_buffer, "helo");
+        assert_eq!(app.input_cursor_position, 2);
+    }
+
+    #[test]
+    fn test_handle_delete_at_end() {
+        let mut app = App::new();
+        app.input_state = Some(InputState::EnteringText);
+        app.input_buffer = "hello".to_string();
+        app.input_cursor_position = 5;
+
+        app.handle_delete();
+        assert_eq!(app.input_buffer, "hello");
+        assert_eq!(app.input_cursor_position, 5);
+    }
+
+    #[test]
+    fn test_move_cursor_left() {
+        let mut app = App::new();
+        app.input_buffer = "hello".to_string();
+        app.input_cursor_position = 5;
+
+        app.move_cursor_left();
+        assert_eq!(app.input_cursor_position, 4);
+
+        app.move_cursor_left();
+        assert_eq!(app.input_cursor_position, 3);
+    }
+
+    #[test]
+    fn test_move_cursor_left_at_start() {
+        let mut app = App::new();
+        app.input_buffer = "hello".to_string();
+        app.input_cursor_position = 0;
+
+        app.move_cursor_left();
+        assert_eq!(app.input_cursor_position, 0);
+    }
+
+    #[test]
+    fn test_move_cursor_right() {
+        let mut app = App::new();
+        app.input_buffer = "hello".to_string();
+        app.input_cursor_position = 0;
+
+        app.move_cursor_right();
+        assert_eq!(app.input_cursor_position, 1);
+
+        app.move_cursor_right();
+        assert_eq!(app.input_cursor_position, 2);
+    }
+
+    #[test]
+    fn test_move_cursor_right_at_end() {
+        let mut app = App::new();
+        app.input_buffer = "hello".to_string();
+        app.input_cursor_position = 5;
+
+        app.move_cursor_right();
+        assert_eq!(app.input_cursor_position, 5);
+    }
+
+    #[test]
+    fn test_move_cursor_home() {
+        let mut app = App::new();
+        app.input_buffer = "hello".to_string();
+        app.input_cursor_position = 5;
+        app.input_scroll_offset = 10;
+
+        app.move_cursor_home();
+        assert_eq!(app.input_cursor_position, 0);
+        assert_eq!(app.input_scroll_offset, 0);
+    }
+
+    #[test]
+    fn test_move_cursor_end() {
+        let mut app = App::new();
+        app.input_buffer = "hello".to_string();
+        app.input_cursor_position = 0;
+
+        app.move_cursor_end();
+        assert_eq!(app.input_cursor_position, 5);
+    }
+
+    #[test]
+    fn test_scroll_output_up() {
+        let mut app = App::new();
+        app.output_scroll_offset = 5;
+
+        app.scroll_output_up();
+        assert_eq!(app.output_scroll_offset, 4);
+
+        app.scroll_output_up();
+        assert_eq!(app.output_scroll_offset, 3);
+    }
+
+    #[test]
+    fn test_scroll_output_up_at_top() {
+        let mut app = App::new();
+        app.output_scroll_offset = 0;
+
+        app.scroll_output_up();
+        assert_eq!(app.output_scroll_offset, 0);
+    }
+
+    #[test]
+    fn test_scroll_output_down() {
+        let mut app = App::new();
+        app.messages = vec!["a".to_string(), "b".to_string(), "c".to_string()];
+        app.output_scroll_offset = 0;
+
+        app.scroll_output_down();
+        assert_eq!(app.output_scroll_offset, 1);
+
+        app.scroll_output_down();
+        assert_eq!(app.output_scroll_offset, 2);
+    }
+
+    #[test]
+    fn test_scroll_output_down_at_bottom() {
+        let mut app = App::new();
+        app.messages = vec!["a".to_string(), "b".to_string()];
+        app.output_scroll_offset = 1;
+
+        app.scroll_output_down();
+        assert_eq!(app.output_scroll_offset, 1);
+    }
+
+    #[test]
+    fn test_scroll_output_page_up() {
+        let mut app = App::new();
+        app.output_scroll_offset = 20;
+
+        app.scroll_output_page_up(10);
+        assert_eq!(app.output_scroll_offset, 10);
+
+        app.scroll_output_page_up(15);
+        assert_eq!(app.output_scroll_offset, 0);
+    }
+
+    #[test]
+    fn test_scroll_output_page_down() {
+        let mut app = App::new();
+        app.messages = vec!["msg".to_string(); 50];
+        app.output_scroll_offset = 0;
+
+        app.scroll_output_page_down(10);
+        assert_eq!(app.output_scroll_offset, 10);
+
+        app.scroll_output_page_down(10);
+        assert_eq!(app.output_scroll_offset, 20);
+    }
+
+    #[test]
+    fn test_scroll_output_page_down_respects_max() {
+        let mut app = App::new();
+        app.messages = vec!["msg".to_string(); 15];
+        app.output_scroll_offset = 0;
+
+        app.scroll_output_page_down(10);
+        assert_eq!(app.output_scroll_offset, 5);
+    }
+
+    #[test]
+    fn test_get_visible_input_no_scroll() {
+        let mut app = App::new();
+        app.input_buffer = "hello".to_string();
+        app.input_cursor_position = 3;
+        app.input_scroll_offset = 0;
+
+        let (visible, cursor, indicator) = app.get_visible_input(100, 10);
+        assert_eq!(visible, "hello");
+        assert_eq!(cursor, 3);
+        assert_eq!(indicator, "");
+    }
+
+    #[test]
+    fn test_get_visible_input_with_scroll() {
+        let mut app = App::new();
+        app.input_buffer = "hello world this is a very long string".to_string();
+        app.input_cursor_position = 20;
+        app.input_scroll_offset = 10;
+
+        let (_visible, cursor, _indicator) = app.get_visible_input(30, 5);
+        assert_eq!(cursor, 10);
+    }
+
+    #[test]
+    fn test_get_visible_input_empty() {
+        let app = App::new();
+        let (visible, cursor, indicator) = app.get_visible_input(100, 10);
+        assert_eq!(visible, "");
+        assert_eq!(cursor, 0);
+        assert_eq!(indicator, "");
+    }
+
+    #[test]
+    fn test_get_input_prompt_entering_text() {
+        let mut app = App::new();
+        app.input_state = Some(InputState::EnteringText);
+        assert_eq!(app.get_input_prompt(), "Enter text: ");
+    }
+
+    #[test]
+    fn test_get_input_prompt_entering_bit_index() {
+        let mut app = App::new();
+        app.input_state = Some(InputState::EnteringBitIndex);
+        assert_eq!(app.get_input_prompt(), "Enter bit index: ");
+    }
+
+    #[test]
+    fn test_get_input_prompt_showing_result() {
+        let mut app = App::new();
+        app.input_state = Some(InputState::ShowingResult);
+        assert_eq!(app.get_input_prompt(), "Press Enter to continue...");
+    }
+
+    #[test]
+    fn test_get_input_prompt_no_state() {
+        let app = App::new();
+        assert_eq!(app.get_input_prompt(), "");
+    }
+
+    #[test]
+    fn test_switch_to_menu() {
+        let mut app = App::new();
+        app.current_screen = CurrentScreen::Sandbox;
+        app.current_mode = Some(SandboxMode::Manual);
+        app.input_state = Some(InputState::EnteringText);
+        app.input_buffer = "test".to_string();
+        app.messages.push("message".to_string());
+
+        app.switch_to_menu();
+        assert!(matches!(app.current_screen, CurrentScreen::Menu));
+        assert!(app.current_mode.is_none());
+        assert!(app.input_state.is_none());
+        assert_eq!(app.input_buffer, "");
+        assert!(app.messages.is_empty());
+    }
+
+    #[test]
+    fn test_submit_input_manual_entering_text() {
+        let mut app = App::new();
+        app.current_mode = Some(SandboxMode::Manual);
+        app.input_state = Some(InputState::EnteringText);
+        app.input_buffer = "hello".to_string();
+
+        app.submit_input();
+        assert_eq!(app.original_text, "hello");
+        assert_eq!(app.input_buffer, "");
+        assert_eq!(app.input_cursor_position, 0);
+        assert_eq!(app.input_scroll_offset, 0);
+        assert!(matches!(
+            app.input_state,
+            Some(InputState::EnteringBitIndex)
+        ));
+    }
+
+    #[test]
+    fn test_submit_input_manual_entering_bit_index() {
+        let mut app = App::new();
+        app.current_mode = Some(SandboxMode::Manual);
+        app.input_state = Some(InputState::EnteringBitIndex);
+        app.input_buffer = "42".to_string();
+        app.original_text = "hello".to_string();
+
+        app.submit_input();
+        assert_eq!(app.bit_index, Some(42));
+        assert_eq!(app.input_buffer, "");
+        assert!(matches!(app.input_state, Some(InputState::ShowingResult)));
+    }
+
+    #[test]
+    fn test_submit_input_manual_empty_bit_index() {
+        let mut app = App::new();
+        app.current_mode = Some(SandboxMode::Manual);
+        app.input_state = Some(InputState::EnteringBitIndex);
+        app.input_buffer = "".to_string();
+        app.original_text = "hello".to_string();
+
+        app.submit_input();
+        assert_eq!(app.bit_index, None);
+        assert!(matches!(app.input_state, Some(InputState::ShowingResult)));
+    }
+
+    #[test]
+    fn test_submit_input_manual_showing_result() {
+        let mut app = App::new();
+        app.current_mode = Some(SandboxMode::Manual);
+        app.input_state = Some(InputState::ShowingResult);
+        app.messages.push("old message".to_string());
+        app.output_scroll_offset = 10;
+
+        app.submit_input();
+        assert!(matches!(app.input_state, Some(InputState::EnteringText)));
+        assert!(app.messages.contains(&"Enter string to hash:".to_string()));
+        assert_eq!(app.output_scroll_offset, 0);
+    }
+
+    #[test]
+    fn test_submit_input_automatic_entering_text() {
+        let mut app = App::new();
+        app.current_mode = Some(SandboxMode::Automatic);
+        app.input_state = Some(InputState::EnteringText);
+        app.input_buffer = "test".to_string();
+
+        app.submit_input();
+        assert_eq!(app.original_text, "test");
+        assert!(matches!(app.input_state, Some(InputState::ShowingResult)));
+    }
+
+    #[test]
+    fn test_submit_input_automatic_showing_result() {
+        let mut app = App::new();
+        app.current_mode = Some(SandboxMode::Automatic);
+        app.input_state = Some(InputState::ShowingResult);
+        app.messages.push("old message".to_string());
+
+        app.submit_input();
+        assert!(matches!(app.input_state, Some(InputState::EnteringText)));
+        assert!(app.messages.contains(&"Enter string to hash:".to_string()));
+    }
+
+    #[test]
+    fn test_submit_input_empty_text_ignored() {
+        let mut app = App::new();
+        app.current_mode = Some(SandboxMode::Manual);
+        app.input_state = Some(InputState::EnteringText);
+        app.input_buffer = "".to_string();
+
+        app.submit_input();
+        assert!(matches!(app.input_state, Some(InputState::EnteringText)));
+    }
+
+    #[test]
+    fn test_adjust_input_scroll_with_width() {
+        let mut app = App::new();
+        app.input_buffer = "hello world this is a test".to_string();
+        app.input_cursor_position = 20;
+
+        app.adjust_input_scroll_with_width(15);
+        assert!(app.input_scroll_offset > 0);
+    }
+
+    #[test]
+    fn test_adjust_input_scroll_with_width_cursor_before_scroll() {
+        let mut app = App::new();
+        app.input_buffer = "hello world".to_string();
+        app.input_cursor_position = 2;
+        app.input_scroll_offset = 5;
+
+        app.adjust_input_scroll_with_width(20);
+        assert_eq!(app.input_scroll_offset, 2);
     }
 }

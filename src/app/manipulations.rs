@@ -8,7 +8,7 @@ pub fn str_to_bits(input: &str) -> Vec<u8> {
     result
 }
 
-pub fn bits_to_bytes(bits: &Vec<u8>) -> Vec<u8> {
+pub fn bits_to_bytes(bits: &[u8]) -> Vec<u8> {
     bits.chunks(8)
         .map(|chunk| {
             chunk
@@ -19,7 +19,7 @@ pub fn bits_to_bytes(bits: &Vec<u8>) -> Vec<u8> {
         .collect()
 }
 
-pub fn reverse_bit(input: &Vec<u8>, bit_idx: usize) -> Vec<u8> {
+pub fn reverse_bit(input: &[u8], bit_idx: usize) -> Vec<u8> {
     if bit_idx >= input.len() {
         return input.to_vec();
     }

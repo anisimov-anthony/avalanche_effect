@@ -44,7 +44,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<bool> {
     loop {
         terminal.draw(|f| {
-            if let Some(_) = &app.input_state {
+            if app.input_state.is_some() {
                 let input_width = f.area().width as usize;
                 app.adjust_input_scroll_with_width(input_width);
             }
@@ -56,18 +56,15 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                 continue;
             }
 
-            match key.code {
-                KeyCode::Esc => match app.current_screen {
-                    CurrentScreen::Sandbox => {
-                        app.switch_to_menu();
-                    }
-                    CurrentScreen::Exiting => {
-                        app.current_screen = CurrentScreen::Menu;
-                    }
-                    _ => {}
-                },
+            if key.code == KeyCode::Esc { match app.current_screen {
+                CurrentScreen::Sandbox => {
+                    app.switch_to_menu();
+                }
+                CurrentScreen::Exiting => {
+                    app.current_screen = CurrentScreen::Menu;
+                }
                 _ => {}
-            }
+            } }
 
             match app.current_screen {
                 CurrentScreen::Menu => match key.code {
