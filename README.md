@@ -17,7 +17,6 @@ A tiny change in the input (even flipping a single bit) leads to a drastic, unpr
 - Shows a clear demonstration of the avalanche effect
 - Lightweight and easy to run
 - Useful as an educational tool for understanding cryptographic principles
-- **Comprehensive test coverage (92.94%)** with 89 unit and integration tests
 
 ## Prerequisites
 - Install [Rust](https://rustup.rs)
@@ -47,10 +46,7 @@ cargo test test_name
 
 ### Code Coverage
 
-The project maintains **92.94% code coverage** with **89 tests**:
-- 72 unit tests for core app logic
-- 14 integration tests for end-to-end workflows
-- 13 UI rendering tests
+The project maintains **high level of code coverage**.
 
 **Generate Coverage Report:**
 ```bash
